@@ -65,9 +65,10 @@ c_mix <- cluster.assign.torus(data, icp.torus.mix, level = alpha)
 c_kmeans <- cluster.assign.torus(data, icp.torus.kmeans, level = alpha)
 
 ## -----------------------------------------------------------------------------
-cluster.num <- cluster.assign.number(data, Jmin = 3, Jmax = 35, method = "homogeneous-circular")
-cluster.num$plot
-cluster.num$cluster.number %>% group_by(Number) %>% count()
+output <- hyperparam.torus(data, icp.torus.objects = l, option = "risk")
+output$IC.results
+output$alpha.results
+output$optim$hyperparam
 
 ## -----------------------------------------------------------------------------
 c_mix$mixture$plot
