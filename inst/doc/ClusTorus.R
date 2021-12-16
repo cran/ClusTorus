@@ -20,39 +20,27 @@ data %>% ggplot(aes(x = phi, y = psi, color = label)) + geom_point() +
 set.seed(2021)
 
 Jvec <- 5:30
-l <- list()
-
-for (j in Jvec){
-  l[[j]] <- icp.torus.score(as.matrix(data[, 1:2]),
-                            method = "kmeans",
+l <- icp.torus(as.matrix(data[, 1:2]),
+                            model = "kmeans",
                             kmeansfitmethod = "general",
                             init = "hierarchical",
-                            param = list(J = j), 
+                            J = Jvec,
                             verbose = FALSE)
-}
-
 
 ## -----------------------------------------------------------------------------
-output <- hyperparam.torus(data[, 1:2], icp.torus.objects = l, option = "risk")
-output$IC.results
-output$alpha.results
-output$optim$hyperparam
+output <- hyperparam.torus(l, option = "risk")
+output
+plot(output)
 
 ## -----------------------------------------------------------------------------
-icp.torus.kmeans <- output$optim$icp.torus
-alphahat <- output$optim$hyperparam[2]
+icp.torus.kmeans <- output$icp.torus
+alphahat <- output$alphahat
 
 ## -----------------------------------------------------------------------------
-c_kmeans <- cluster.assign.torus(data[, 1:2], icp.torus.kmeans, level = alphahat)
-c_kmeans$kmeans$plot
+c_kmeans <- cluster.assign.torus(icp.torus.kmeans, level = alphahat)
+plot(icp.torus.kmeans, level = alphahat)
 
 ## -----------------------------------------------------------------------------
-result.dat.kmeans <- data.frame(data[, 1:2], membership = as.factor(c_kmeans$kmeans$cluster.id.outlier)) %>%
-  mutate(membership = ifelse(membership == max(c_kmeans$kmeans$cluster.id.outlier), "out", membership))
-
-g1 <- ggplot(data = result.dat.kmeans, aes(phi,psi, color = membership)) + geom_point() +
-  scale_x_continuous(breaks = c(0,1,2,3,4)*pi/2, labels = c("0","pi/2","pi","3pi/2","2pi"), limits = c(0,2*pi))+
-  scale_y_continuous(breaks = c(0,1,2,3,4)*pi/2, labels = c("0","pi/2","pi","3pi/2","2pi"), limits = c(0,2*pi))
-
-g1
+c_kmeans
+plot(c_kmeans)
 

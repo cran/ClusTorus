@@ -27,13 +27,23 @@ cp.torus.kde <- function(data, eval.point = grid.torus(),
   # level can be either a scalar or a vector, or even null.
   # if level is null, return kde at eval.point and at data points.
   # if level is a vector, return the above and Prediction set indices for each value of level.
+  # if data contains NAs, the rows containing NAs are removed by na.omit()
+
+  data <- stats::na.omit(data)
+
   if (!is.matrix(data)) {data <- as.matrix(data)}
 
   N <- nrow(eval.point)
   n <- nrow(data)
 
   eval.point.bind <- rbind(eval.point, data)
-  #
+
+  concentration = concentration[1]
+  if (!is.numeric(concentration) | concentration <= 0) {
+    concentration <- 25
+    warning("Concentration must be a positive number. Reset as concentration = 25 (default)\n")
+  }
+
   phat <- kde.torus(data, eval.point.bind,
                     concentration = concentration)
 
@@ -42,10 +52,18 @@ cp.torus.kde <- function(data, eval.point = grid.torus(),
   data <- data[phat.data$ix, ] # data reordered to satisfy y_i = y_(i)
   phat.data <- phat.data$x    # hat{p}(y_(i)) sorted (increasing)
 
-  nalpha <- length(level)
   cp.torus <- NULL
 
+
   if (!is.null(level)){
+
+    if (level < 0 || level > 1) {
+      level <- 0.1
+      warning("Level must be numeric and between 0 and 1. Reset as level = 0.1 (default)")
+    }
+
+    nalpha <- length(level)
+
     for (i in 1:nalpha){
       ialpha <- floor( (n + 1) * level[i])
       # indices for inclusion in L-
@@ -66,13 +84,13 @@ cp.torus.kde <- function(data, eval.point = grid.torus(),
                                Lminus = Lminus, Cn = Cn, Lplus = Lplus, level = level[i])
       cp.torus <- rbind(cp.torus, cp.torus.i)
     }
+
   }
 
-
-  list(cp.torus = cp.torus,
-       grid = eval.point,
-       phat.grid = phat.grid,
-       phat.data = phat.data,
-       data.sorted = data
-  )
+  structure(list(concentration = concentration, level = level,
+                 cp.torus = cp.torus,
+                 grid = eval.point,
+                 phat.grid = phat.grid,
+                 phat.data = phat.data,
+                 data.sorted = data), class = "cp.torus.kde")
 }

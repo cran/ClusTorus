@@ -9,7 +9,7 @@ EMsinvMmix(
   J = 4,
   parammat = EMsinvMmix.init(data, J),
   THRESHOLD = 1e-10,
-  maxiter = 200,
+  maxiter = 100,
   type = c("circular", "axis-aligned", "general"),
   kmax = 500,
   verbose = TRUE
@@ -57,7 +57,7 @@ distribution with \code{list}:
 }
 \description{
 \code{EMsinvMmix} returns fitted parameters of J-mixture of
-  bivariate sine von Mises.
+  bivariate sine von Mises distributions.
 }
 \details{
 This algorithm is based on ECME algorithm. That is,
@@ -85,6 +85,6 @@ EMsinvMmix(data, J = 3,
 }
 }
 \references{
-'S. Jung, K. Park, and B. Kim (2021),
-  "Clustering on the torus by conformal prediction"
+S. Jung, K. Park, and B. Kim (2021),
+  "Clustering on the torus by conformal prediction" to appear in \emph{Annals of Applied Statistics}.
 }

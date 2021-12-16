@@ -15,38 +15,38 @@
 #'   level.
 #' @export
 #' @seealso \code{\link[ClusTorus]{hyperparam.J}}, \code{\link[ClusTorus]{hyperparam.torus}}
-#'  \code{\link[ClusTorus]{icp.torus.score}}
+#'  \code{\link[ClusTorus]{icp.torus}}
 #' @examples
 #' \donttest{
 #' data <- toydata2[, 1:2]
 #' n <- nrow(data)
 #' split.id <- rep(2, n)
 #' split.id[sample(n, floor(n/2))] <- 1
-#' icp.torus <- icp.torus.score(data, split.id = split.id, method = "kmeans",
-#'                              kmeansfitmethod = "ge", init = "h",
-#'                              param = list(J = 25), verbose = TRUE)
+#' icp.torus <- icp.torus(data, split.id = split.id, model = "kmeans",
+#'                        kmeansfitmethod = "ge", init = "h",
+#'                        J = 25, verbose = TRUE)
 #' hyperparam.alpha(icp.torus)
 #' }
 hyperparam.alpha <- function(icp.torus, alphavec = NULL, alpha.lim = 0.15){
   if(is.null(icp.torus)) {stop("icp.torus object must be input.")}
 
-  if(!is.null(icp.torus$mixture)) {method <- "mixture"}
-  else if(!is.null(icp.torus$kmeans)) {method <- "kmeans"}
+  if(icp.torus$method == "mixture") {method <- "mixture"}
+  else if(icp.torus$method == "kmeans") {method <- "kmeans"}
   else {stop("method kde is not supported.")}
   n2 <- icp.torus$n2
 
-  if (alpha.lim > 1) {stop("alpha.lim must be less than 1.")}
+  if (is.null(alphavec) && alpha.lim > 1) {stop("alpha.lim must be less than 1.")}
 
   output <- list()
   out <- data.frame()
-  if (is.null(alphavec)) {alphavec <- 1:floor(n2 * alpha.lim) / n2}
+  if (is.null(alphavec)) {alphavec <- 1:floor(min(n2, 1000) * alpha.lim) / n2}
 
   # 1. kmeans -----------------------------------------------------
   if (method == "kmeans"){
     for (alpha in alphavec){
       ialpha <- ifelse((n2 + 1) * alpha < 1, 1, floor((n2 + 1) * alpha))
-      t <- icp.torus$kmeans$score_sphere[ialpha]
-      ncluster <- conn.comp.ellipse(icp.torus$kmeans$spherefit, t)$ncluster
+      t <- icp.torus$score_ellipse[ialpha]
+      ncluster <- conn.comp.ellipse(icp.torus$ellipsefit, t)$ncluster
 
       out <- rbind(out, data.frame(alpha = alpha, ncluster = ncluster))
     }
@@ -67,8 +67,8 @@ hyperparam.alpha <- function(icp.torus, alphavec = NULL, alpha.lim = 0.15){
   else if (method == "mixture"){
     for (alpha in alphavec){
       ialpha <- ifelse((n2 + 1) * alpha < 1, 1, floor((n2 + 1) * alpha))
-      t <- icp.torus$mixture$score_ellipse[ialpha]
-      ncluster <- conn.comp.ellipse(icp.torus$mixture$ellipsefit, t)$ncluster
+      t <- icp.torus$score_ellipse[ialpha]
+      ncluster <- conn.comp.ellipse(icp.torus$ellipsefit, t)$ncluster
 
       out <- rbind(out, data.frame(alpha = alpha, ncluster = ncluster))
     }
@@ -84,5 +84,5 @@ hyperparam.alpha <- function(icp.torus, alphavec = NULL, alpha.lim = 0.15){
     output$alpha.results <- out
     output$alphahat <- alphahat
   }
-  return(output)
+  return(structure(output, class = "hyperparam.alpha"))
 }
