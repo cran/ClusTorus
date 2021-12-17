@@ -1,4 +1,4 @@
-2ca7c440a3e5559e124219117d974751 *DESCRIPTION
+2c2024fdbafe5c7c3259f9e850de1f7f *DESCRIPTION
 d4ba60e70ab1a52a304e1f7301ac45aa *NAMESPACE
 099dee707f0913067d4e22a6f27ac156 *R/Ainv.R
 95d82af0fb0ae84b971c1b78413a9468 *R/ClusTorus-package.R
@@ -25,7 +25,7 @@ b0c40192fe16f374c51f13363763500e *R/hyperparam.J.R
 52a3f037cc13098abf8168c1432ffa62 *R/kde.torus.R
 e31735ebdbd11593ce6abe4d349e737d *R/kmeans.torus.R
 6db71aeafa5aa2d3bf28511b17c895ac *R/mah.dist2.eval.R
-0b91b9350e9e580ef636e52fc73c1cd8 *R/methods.R
+3601572fa1f69d374fe9bcc105da3b00 *R/methods.R
 608660957cc132a541b819cd39ddfd1d *R/norm.appr.param.R
 d76e477d79e6e47ba7720f35db50b0ef *R/on.torus.R
 bb33b2142fc563fa040f64b674002790 *R/phat.eval.R
@@ -34,7 +34,7 @@ bb33b2142fc563fa040f64b674002790 *R/phat.eval.R
 6ab832701888bd9a548bb51e868b3c7f *R/tor.minus.R
 3a1735d3d28a6dac9641e05a4c8c5d73 *R/wtd.stat.amb.R
 6b5dde87b58f4dc3fb3c1cf9cba57e46 *R/wtd.stat.ang.R
-7d697d515a65466423da378ecd503015 *build/partial.rdb
+18ad9c398767aba49573835b455a51fc *build/partial.rdb
 64cb56184e0a0001428530d7c9c6e119 *build/vignette.rds
 9ecbf5dc7b3ec2514156e8fe5c6581f2 *data/ILE.rda
 894492fc6ed9e98bab8f36100f8e0991 *data/SARS_CoV_2.rda
@@ -42,7 +42,7 @@ bb33b2142fc563fa040f64b674002790 *R/phat.eval.R
 ee9ed54a1c96438bd0a0a2c0f362c087 *data/toydata2.rda
 9157e82049613c89ad3f209a069b784d *inst/doc/ClusTorus.R
 fbe44e257aa6a0d2172072d6eb0c7d89 *inst/doc/ClusTorus.Rmd
-34cb8a9c43a2389464a5e4ef1e73c6e7 *inst/doc/ClusTorus.html
+7027baa8ef949ebfe4bd7f9e89476ab9 *inst/doc/ClusTorus.html
 e5c12c58d477ce3656e4e93335802d8e *man/ClusTorus-package.Rd
 e50993793211ab9e605d0acef85ca8a8 *man/EMsinvMmix.Rd
 7066fce79cb296532b8224cf2bfbb4f2 *man/ILE.Rd
