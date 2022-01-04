@@ -10,9 +10,8 @@
 #'   automatically generated as a sequence from 0 to \code{alpha.lim}.
 #' @param alpha.lim a positive number lower than 1, which is the upper bound of
 #'   Default is 0.15.
-#' @return returns a list object which contains a \code{data.frame} for
-#'   the numbers of clusters corresponding to the levels and the optimal
-#'   level.
+#' @return returns a \code{hyperparam.alpha} object which contains a \code{data.frame} for
+#'   the numbers of clusters corresponding to the levels and the optimal level.
 #' @export
 #' @seealso \code{\link[ClusTorus]{hyperparam.J}}, \code{\link[ClusTorus]{hyperparam.torus}}
 #'  \code{\link[ClusTorus]{icp.torus}}
@@ -30,26 +29,33 @@
 hyperparam.alpha <- function(icp.torus, alphavec = NULL, alpha.lim = 0.15){
   if(is.null(icp.torus)) {stop("icp.torus object must be input.")}
 
-  if(icp.torus$method == "mixture") {method <- "mixture"}
-  else if(icp.torus$method == "kmeans") {method <- "kmeans"}
-  else {stop("method kde is not supported.")}
+  if(icp.torus$model == "mixture") {model <- "mixture"}
+  else if(icp.torus$model == "kmeans") {model <- "kmeans"}
+  else {stop("model kde is not supported.")}
   n2 <- icp.torus$n2
 
   if (is.null(alphavec) && alpha.lim > 1) {stop("alpha.lim must be less than 1.")}
 
   output <- list()
   out <- data.frame()
+
   if (is.null(alphavec)) {alphavec <- 1:floor(min(n2, 1000) * alpha.lim) / n2}
 
+  n.alphavec <- length(alphavec)
+
   # 1. kmeans -----------------------------------------------------
-  if (method == "kmeans"){
-    for (alpha in alphavec){
+  if (model == "kmeans"){
+
+    for (ii in 1:n.alphavec){
+      alpha <- alphavec[ii]
       ialpha <- ifelse((n2 + 1) * alpha < 1, 1, floor((n2 + 1) * alpha))
       t <- icp.torus$score_ellipse[ialpha]
       ncluster <- conn.comp.ellipse(icp.torus$ellipsefit, t)$ncluster
 
       out <- rbind(out, data.frame(alpha = alpha, ncluster = ncluster))
+      if(ii%%10 == 0) cat(".")
     }
+    cat("\n")
 
     nclusters.length <- rle(out$ncluster)$lengths
     length <- max(nclusters.length)
@@ -64,14 +70,19 @@ hyperparam.alpha <- function(icp.torus, alphavec = NULL, alpha.lim = 0.15){
   }
 
   # 2. mixture ----------------------------------------------------
-  else if (method == "mixture"){
-    for (alpha in alphavec){
+
+  else if (model == "mixture"){
+
+    for (ii in 1:n.alphavec){
+      alpha <- alphavec[ii]
       ialpha <- ifelse((n2 + 1) * alpha < 1, 1, floor((n2 + 1) * alpha))
       t <- icp.torus$score_ellipse[ialpha]
       ncluster <- conn.comp.ellipse(icp.torus$ellipsefit, t)$ncluster
 
       out <- rbind(out, data.frame(alpha = alpha, ncluster = ncluster))
+      if(ii%%10 == 0) cat(".")
     }
+    cat("\n")
 
     nclusters.length <- rle(out$ncluster)$lengths
     length <- max(nclusters.length)

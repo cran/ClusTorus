@@ -15,6 +15,7 @@ clus.torus(
   J = NULL,
   level = NULL,
   option = NULL,
+  verbose = TRUE,
   ...
 )
 
@@ -43,14 +44,14 @@ on the von Mises mixture, fitted
 with an EM algorithm. It supports the von Mises mixture and its variants
 based conformity scores. If "kmeans", the model is also based on the von
 Mises mixture, but the parameter estimation is implemented with the
-elliptical k-means algorithm illustrated in Appendix. It supports the
+elliptical k-means algorithm. It supports the
 log-max-mixture based conformity score only. If the
 dimension of data space is greater than 2, only "kmeans" is supported.
-Default is \code{method = "kmeans"}.}
+Default is \code{model = "kmeans"}.}
 
 \item{mixturefitmethod}{A string. One of "circular", "axis-aligned", and
 "general" which determines the constraint of the EM fitting. Default is
-"axis-aligned". This argument only works for \code{method = "mixture"}.}
+"axis-aligned". This argument only works for \code{model = "mixture"}.}
 
 \item{kmeansfitmethod}{A string. One of "general", ellipsoids",
 "heterogeneous-circular" or "homogeneous-circular". If "general", the
@@ -58,7 +59,7 @@ elliptical k-means algorithm with no constraint is used. If "ellipsoids",
 only the one iteration of the algorithm is used. If"heterogeneous-circular",
 the same as above, but with the constraint that ellipsoids must be spheres.
 If "homogeneous-circular", the same as above but the radii of the spheres are
-identical. Default is "general". This argument only works for method = "kmeans".}
+identical. Default is "general". This argument only works for \code{model = "kmeans"}.}
 
 \item{J}{the number of components for mixture model fitting. If \code{J} is a vector,
  then \code{hyperparam.torus} is used to choose optimal \code{J}. If
@@ -74,7 +75,12 @@ for the Akaike Information Criterion, and "BIC" for the Bayesian Information Cri
 "elbow" is based on minimizing the criterion used in Jung et. al.(2021).
 This argument is only used if \code{J} is a vector or \code{NULL}.}
 
-\item{...}{additional parameter for ggplot2::ggplot()}
+\item{verbose}{boolean index, which indicates whether display
+additional details as to what the algorithm is doing or
+how many loops are done. Default is \code{TRUE}.}
+
+\item{...}{Further arguments that will be passed to \code{icp.torus} and
+\code{hyperparam.torus}}
 
 \item{x}{\code{clus.torus} object}
 
@@ -88,7 +94,7 @@ If \code{panel = 3}, \code{x$hyperparam.select} will be plotted. Default is \cod
 for \code{panel = 2}.}
 
 \item{type}{A string. One of "mix", "max" or "e". This argument is only available if \code{icp.torus}
-object is fitted with method = "mixture". Default is \code{NULL}. If \code{type != NULL}, argument
+object is fitted with \code{model = "mixture"}. Default is \code{NULL}. If \code{type != NULL}, argument
 \code{ellipse} automatically becomes \code{FALSE}. If "mix", it plots based on von Mises mixture.
 If "max", it plots based on von Mises max-mixture. If "e", it plots based on ellipse-approximation.}
 
@@ -98,23 +104,32 @@ Only available for \code{panel = 1}.}
 \item{out}{An option for returning the ggplot object. Default is \code{FALSE}.}
 }
 \value{
-clustering assignment for data
+\code{clus.torus} returns a \code{clus.torus} object, which consists of following 3 different S3 objects;
 \describe{
-  \item{\code{cluster.id.by.log.density}}{cluster assignment result based on approximate log-density.}
-  \item{\code{cluster.id.by.posterior}}{cluster assignment result based on the posterior probability.}
-  \item{\code{cluster.id.outlier}}{cluster assignment result which regards data not included in conformal prediction set
-  as outliers.}
-  \item{\code{cluster.id.by.Mah.dist}}{cluster assignment result based on Mahalanobis distance.}
-  \item{\code{level}}{used level which determines the size of clusters(conformal prediction set).}
-  \item{\code{data}}{input data which are assigned to each cluster.}
-  \item{\code{icp.torus}}{\code{icp.torus} object which is used for cluster assignment.}
+  \item{\code{cluster.obj}}{\code{cluster.obj} object; clustering assignment results for
+    several methods. For detail, see \code{\link[ClusTorus]{cluster.assign.torus}}.}
+  \item{\code{icp.torus}}{\code{icp.torus} object; containing model parameters and
+    conformity scores. For detail, see \code{\link[ClusTorus]{icp.torus}}.}
+  \item{\code{hyperparam.select}}{\code{hyperparam.torus} object (if \code{J = NULL} or a
+  sequence of numbers, and  \code{level = NULL} or a sequence of numbers), \code{hyperparam.J} object (if \code{level} is a scalar), or \code{hyperparam.alpha} object (if \code{J} is a scalar);
+   contains information for the optimally chosen model (number of components J) and level (alpha)
+  based on prespecified criterion.  For detail, see \code{\link[ClusTorus]{hyperparam.torus}}, \code{\link[ClusTorus]{hyperparam.J}}, and \code{\link[ClusTorus]{hyperparam.alpha}}.}
 }
 }
 \description{
 \code{clus.torus} returns clustering results of data on the torus based on
   inductive conformal prediction set
-
-\code{plot.clus.torus} plots \code{clus.torus} object with some options.
+}
+\details{
+\code{clus.torus} is a user-friendly all-in-one function which implements following
+procedures automatically: 1. compute conformity scores for given model and fitting method,
+2. choose optimal model and level based on prespecified criterion, and
+3. make clusters based on the chosen model and level. Procedure 1-3 can be
+independently done with \code{icp.torus}, \code{hyperparam.torus},
+\code{hyperparam.J}, \code{hyperparam.alpha} and \code{cluster.assign.torus}.
+If you want to see more detail for each procedure, please see
+\code{\link[ClusTorus]{icp.torus}}, \code{\link[ClusTorus]{hyperparam.J}}, \code{\link[ClusTorus]{hyperparam.alpha}}
+\code{\link[ClusTorus]{hyperparam.torus}}, \code{\link[ClusTorus]{cluster.assign.torus}}.
 }
 \examples{
 \donttest{
@@ -124,6 +139,14 @@ clus.torus(data = data, model = "kmeans", kmeansfitmethod = "general", J = 5:30,
 }
 }
 \references{
-S. Jung, K. Park, and B. Kim (2021),
-  "Clustering on the torus by conformal prediction",
+Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+
+  Mardia, K. V., Kent, J. T., Zhang, Z., Taylor, C. C., & Hamelryck, T. (2012). Mixtures of concentrated multivariate sine distributions with applications to bioinformatics. \emph{Journal of Applied Statistics}, 39(11), 2475-2492.
+
+  Shin, J., Rinaldo, A., & Wasserman, L. (2019). Predictive clustering. \emph{arXiv preprint arXiv:1903.08125}.
+}
+\seealso{
+\code{\link[ClusTorus]{icp.torus}}, \code{\link[ClusTorus]{hyperparam.torus}},
+  \code{\link[ClusTorus]{hyperparam.J}}, \code{\link[ClusTorus]{hyperparam.alpha}}
+  \code{\link[ClusTorus]{cluster.assign.torus}}
 }

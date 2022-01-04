@@ -17,32 +17,35 @@
 #'   elliptical k-means algorithm illustrated in Appendix. It supports the
 #'   log-max-mixture based conformity score only. If the
 #'   dimension of data space is greater than 2, only "kmeans" is supported.
-#'   Default is \code{method = "kmeans"}.
+#'   Default is \code{model = "kmeans"}.
 #' @param mixturefitmethod A string. One of "circular", "axis-aligned", and
 #'   "general" which determines the constraint of the EM fitting. Default is
-#'   "axis-aligned". This argument only works for \code{method = "mixture"}.
+#'   "axis-aligned". This argument only works for \code{model = "mixture"}.
 #' @param kmeansfitmethod A string. One of "general", ellipsoids",
 #'   "heterogeneous-circular" or "homogeneous-circular". If "general", the
 #'   elliptical k-means algorithm with no constraint is used. If "ellipsoids",
 #'   only the one iteration of the algorithm is used. If"heterogeneous-circular",
 #'   the same as above, but with the constraint that ellipsoids must be spheres.
 #'   If "homogeneous-circular", the same as above but the radii of the spheres are
-#'   identical. Default is "general". This argument only works for method = "kmeans".
-#' @param init determine the initial parameter of "kmeans" method,
-#'   for option "general". Must be "kmeans" or "hierarchical".
-#'   If "kmeans", the initial parameters are obtained with extrinsic kmeans
-#'   method.
-#'   If "hierarchical", the initial parameters are obtained with hierarchical
-#'   clustering method.
-#'   Default is "kmeans".
+#'   identical. Default is "general". This argument only works for \code{model = "kmeans"}.
+#' @param init Methods for choosing initial values of "kmeans" fitting.
+#'   Must be "hierarchical" or "kmeans". If "hierarchical", the initial
+#'  parameters are obtained with hierarchical clustering method.
+#'  If "kmeans", the initial parameters are obtained with extrinsic k-means method.
+#'   Additional arguments for k-means clustering and hierarchical clustering can be designated
+#'   via argument \code{...}. If no options are designated, \code{nstart=1} for \code{init="kmeans"}
+#'   and \code{method="complete"} for \code{init="hierarchical"} are used. Default is "hierarchical".
+#' @param d pairwise distance matrix(\code{dist} object) for \code{init = "hierarchical"},
+#'   which used in hierarchical clustering. If \code{init = "hierarchical"} and \code{d = NULL},
+#'   \code{d} will be automatically filled with \code{ang.pdist(data)}.
 #' @param ... Further arguments for argument \code{init}. If \code{init = "kmeans"},
 #'   these are for \code{\link[stats]{kmeans}}. If \code{init = "hierarchical"},
 #'   there are for \code{\link[stats]{hclust}}.
 #' @param additional.condition boolean index.
 #'   If \code{TRUE}, a singular matrix will be altered to the scaled identity.
-#' @param J the number of components for \code{method = c("mixture", "kmeans")}.
+#' @param J A scalar or numeric vector for the number(s) of components for \code{model = c("mixture", "kmeans")}.
 #'   Default is \code{J = 4}.
-#' @param concentration the concentration parameter for \code{method = "kde"}.
+#' @param concentration A scalar or numeric vector for the concentration parameter(s) for \code{model = "kde"}.
 #'   Default is \code{concentration = 25}.
 #' @param THRESHOLD number for difference between updating and
 #'   updated parameters. Default is 1e-10.
@@ -58,8 +61,13 @@
 #'   single value). if \code{J} or \code{concentration} is a vector containing
 #'   multiple values, then \code{icp.torus} returns a list of \code{icp.torus} objects
 #' @export
-#' @references S. Jung, K. Park, and B. Kim (2021),
-#'   "Clustering on the torus by conformal prediction"
+#' @references Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+#'
+#'   Mardia, K. V., Kent, J. T., Zhang, Z., Taylor, C. C., & Hamelryck, T. (2012). Mixtures of concentrated multivariate sine distributions with applications to bioinformatics. \emph{Journal of Applied Statistics}, 39(11), 2475-2492.
+#'
+#'   Di Marzio, M., Panzera, A., & Taylor, C. C. (2011). Kernel density estimation on the torus. \emph{Journal of Statistical Planning and Inference}, 141(6), 2156-2173.
+#'
+#'   Shin, J., Rinaldo, A., & Wasserman, L. (2019). Predictive clustering. \emph{arXiv preprint arXiv:1903.08125}.
 #' @examples
 #' \donttest{
 #' data <- toydata1[, 1:2]
@@ -74,7 +82,8 @@ icp.torus <- function(data, split.id = NULL,
                       kmeansfitmethod = c("general", "homogeneous-circular",
                                           "heterogeneous-circular",
                                           "ellipsoids"),
-                      init = c("kmeans", "hierarchical"),
+                      init = c("hierarchical", "kmeans"),
+                      d = NULL,
                       additional.condition = TRUE,
                       J = 4, concentration = 25, kmax = 500,
                       THRESHOLD = 1e-10, maxiter = 200,
@@ -105,6 +114,7 @@ icp.torus <- function(data, split.id = NULL,
   kmeansfitmethod <- match.arg(kmeansfitmethod)
   init <- match.arg(init)
 
+
   if (ncol(data) > 2 && model != "kmeans"){
     warning("kde and mixture methods are not implemented for high dimensional case (>= 3)")
     model <- "kmeans"
@@ -117,6 +127,8 @@ icp.torus <- function(data, split.id = NULL,
     split.id[ sample(n,floor(n/2)) ] <- 1
   }
 
+
+
   # if concentration is a vector, return a list of icp.torus objects
   if(length(concentration) > 1){
     if (model == "kde"){
@@ -124,7 +136,7 @@ icp.torus <- function(data, split.id = NULL,
         icp.torus(data, split.id = split.id, model = model,
                         init = init,
                         additional.condition = TRUE,
-                        concentration = kappa,...)
+                        concentration = kappa, ...)
         })
       names(icp.torus.objects) <- paste("conc", concentration, sep = "_")
       return(icp.torus.objects)
@@ -132,6 +144,16 @@ icp.torus <- function(data, split.id = NULL,
     }else{
       concentration = concentration[1]
     }
+  }
+
+  # What follows is for single conc. and J.
+
+  X1 <- data[split.id == 1, ]
+  X2 <- data[split.id == 2, ]
+  n2 <- nrow(X2)
+
+  if (init == "hierarchical" && is.null(d)) {
+    d <- ang.pdist(X1)
   }
 
   # if J is a vector, return a list of icp.torus objects
@@ -142,6 +164,7 @@ icp.torus <- function(data, split.id = NULL,
                   mixturefitmethod = mixturefitmethod,
                   kmeansfitmethod = kmeansfitmethod,
                   init = init,
+                  d = d,
                   additional.condition = additional.condition,
                   J = j,
                   kmax = kmax,
@@ -159,20 +182,23 @@ icp.torus <- function(data, split.id = NULL,
     }
   }
 
-  # What follows is for single conc. and J.
-
-  X1 <- data[split.id == 1, ]
-  X2 <- data[split.id == 2, ]
-  n2 <- nrow(X2)
-
   # Prepare output
-  icp.torus <- list(n2 = n2, split.id = split.id, d = ncol(data), model = as.data.frame(data))
+  icp.torus <- list(n2 = n2, split.id = split.id, d = ncol(data), data = as.data.frame(data))
 
   # For each method, use X1 to estimate phat, then use X2 to provide ranks.
 
+
+
+
   # 1. kde
   if (model == "kde"){
-    icp.torus$method <- "kde"
+    icp.torus$model <- "kde"
+
+    if (!is.numeric(concentration) | concentration <= 0) {
+      concentration <- 25
+      warning("Concentration must be a positive number. Reset as concentration = 25 (default)\n")
+    }
+
     phat <- kde.torus(X1, X2, concentration = concentration)
     icp.torus$concentration <- concentration
     icp.torus$score <- sort(phat)
@@ -182,8 +208,15 @@ icp.torus <- function(data, split.id = NULL,
 
   # 2. mixture fitting by EM
   if (model == "mixture"){
-    icp.torus$method <- "mixture"
+    icp.torus$model <- "mixture"
     icp.torus$fittingmethod <- mixturefitmethod
+
+
+    if (!is.numeric(J) | J < 1) {
+      J <- 4
+      warning("The number of components must be a positive integer Reset as J = 4 (default)\n")
+    }
+    J = as.integer(J)
 
     vm2mixfit <- EMsinvMmix(X1, J = J, parammat = EMsinvMmix.init(data, J),
                             THRESHOLD = THRESHOLD, maxiter = maxiter,
@@ -218,8 +251,14 @@ icp.torus <- function(data, split.id = NULL,
   # 3. elliptical kmeans algorithm
   if (model == "kmeans"){
     # implement extrinsic kmeans clustering for find the centers
-    icp.torus$method <- "kmeans"
+    icp.torus$model <- "kmeans"
     icp.torus$fittingmethod <- kmeansfitmethod
+
+    if (!is.numeric(J) | J < 1) {
+      J <- 4
+      warning("The number of components must be a positive integer Reset as J = 4 (default)\n")
+    }
+    J = as.integer(J)
 
     # consider -R as ehat in von mises mixture approximation
     # where R is the notation in J. Shin (2019)
@@ -228,7 +267,7 @@ icp.torus <- function(data, split.id = NULL,
                                         init = init,
                                         additional.condition = additional.condition,
                                         THRESHOLD = THRESHOLD, maxiter = maxiter,
-                                        verbose = verbose, ...)
+                                        verbose = verbose, d = d, ...)
 
     icp.torus$ellipsefit <- ellipse.param
 
@@ -257,8 +296,7 @@ icp.torus <- function(data, split.id = NULL,
 #'   conformal prediction sets for each given level.
 #' @export
 #' @seealso \code{\link[ClusTorus]{grid.torus}}, \code{\link[ClusTorus]{icp.torus}}
-#' @references S. Jung, K. Park, and B. Kim (2021),
-#'   "Clustering on the torus by conformal prediction"
+#' @references Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
 #' @examples
 #' \donttest{
 #' data <- toydata1[, 1:2]
@@ -280,8 +318,8 @@ icp.torus.eval <- function(icp.torus, level = 0.1, eval.point = grid.torus()){
 
   ialpha <- floor((n2 + 1) * level)
 
-  if(icp.torus$method == "kde"){
-    cp$method <- "kde"
+  if(icp.torus$model == "kde"){
+    cp$model <- "kde"
     Chat_kde <- matrix(0, nrow = N, ncol = nalpha)
     colnames(Chat_kde) <- level
 
@@ -299,8 +337,8 @@ icp.torus.eval <- function(icp.torus, level = 0.1, eval.point = grid.torus()){
     cp$Chat_kde <- Chat_kde
   }
 
-  if(icp.torus$method == "mixture"){
-    cp$method <- "mixture"
+  if(icp.torus$model == "mixture"){
+    cp$model <- "mixture"
     Chat_mix <- matrix(0, nrow = N, ncol = nalpha)
     colnames(Chat_mix) <- level
 
@@ -336,8 +374,8 @@ icp.torus.eval <- function(icp.torus, level = 0.1, eval.point = grid.torus()){
     cp$Chat_e <- Chat_e
   }
 
-  if(icp.torus$method == "kmeans"){
-    cp$method <- "kmeans"
+  if(icp.torus$model == "kmeans"){
+    cp$model <- "kmeans"
     Chat_kmeans <- matrix(0, nrow = N, ncol = nalpha)
 
     ellipsej <- ehat.eval(eval.point, icp.torus$ellipsefit)

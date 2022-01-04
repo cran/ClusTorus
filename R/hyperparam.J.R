@@ -8,14 +8,17 @@
 #' @param option a string one of "risk", "AIC", or "BIC", which determines the criterion
 #'   for the model selection. "risk" is based on the negative log-likelihood, "AIC" for the
 #'   Akaike Information Criterion, and "BIC" for the Bayesian Information Criterion.
-#' @return returns a list object which contains a \code{data.frame} for
+#' @return returns a \code{hyperparam.J} object which contains a \code{data.frame} for
 #'   the evaluated criterion corresponding to each number of components, the optimal
 #'   number of components, and the corresponding \code{icp.torus} object.
 #' @export
 #' @seealso \code{\link[ClusTorus]{icp.torus}}, \code{\link[ClusTorus]{hyperparam.torus}},
 #'   \code{\link[ClusTorus]{hyperparam.alpha}}
-#' @references Akaike (1974), "A new look at the statistical model identification",
-#'   Schwarz, Gideon E. (1978), "Estimating the dimension of a model"
+#' @references Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+#'
+#'   Akaike, H. (1974). A new look at the statistical model identification. \emph{IEEE transactions on automatic control}, 19(6), 716-723.
+#'
+#'   Schwarz, G. (1978). Estimating the dimension of a model. \emph{The annals of statistics}, 461-464.
 #' @examples
 #' \donttest{
 #' data <- toydata1[,1:2]
@@ -42,23 +45,23 @@ hyperparam.J <- function(icp.torus.objects, option = c("risk", "AIC", "BIC")){
     }
   }
 
-  data <- as.matrix(icp.torus.objects[[1]]$model)
+  data <- as.matrix(icp.torus.objects[[1]]$data)
   option <- match.arg(option) # default is risk
 
   split.id <- icp.torus.objects[[1]]$split.id
   d <- ncol(data)
   n2 <- icp.torus.objects[[1]]$n2
 
-  if(icp.torus.objects[[1]]$method == "mixture") {
-    method <- "mixture"
+  if(icp.torus.objects[[1]]$model == "mixture") {
+    model <- "mixture"
     mixturefitmethod <- icp.torus.objects[[1]]$fittingmethod
-  } else if(icp.torus.objects[[1]]$method == "kmeans") {
-    method <- "kmeans"
+  } else if(icp.torus.objects[[1]]$model == "kmeans") {
+    model <- "kmeans"
     kmeansfitmethod <- icp.torus.objects[[1]]$fittingmethod
   } else {stop("method kde is not supported.")}
 
   for (i in n.icp.torus){
-    if (method == icp.torus.objects[[i]]$method) {next}
+    if (model == icp.torus.objects[[i]]$model) {next}
     else {stop("icp.torus objects must share the same method.")}
   }
 
@@ -68,7 +71,7 @@ hyperparam.J <- function(icp.torus.objects, option = c("risk", "AIC", "BIC")){
   penalty <- ifelse(option == "AIC", 2,
                     ifelse(option == "BIC", log(n2), 0))
   # 1. kmeans -----------------------------------------------------
-  if (method == "kmeans"){
+  if (model == "kmeans"){
 
     # preparing the number of model parameters
     if (kmeansfitmethod == "homogeneous-circular"){
@@ -94,13 +97,15 @@ hyperparam.J <- function(icp.torus.objects, option = c("risk", "AIC", "BIC")){
       criterion <- - sum.conformity.scores + (k * j - 1) * penalty +
         ifelse(option != "risk", nsingular * ((log(1e+6^(d - 2))) + d * log((2*pi))), 0)
       IC <- rbind(IC, data.frame(J = j, criterion = criterion))
+      cat(".")
     }
+    cat("\n")
 
     IC.index <- which.min(IC$criterion)
     Jhat <- IC[IC.index, 1]
   }
   # 2. mixture ----------------------------------------------------
-  else if (method == "mixture"){
+  else if (model == "mixture"){
 
     # preparing the number of model parameters
     if (mixturefitmethod == "circular"){
@@ -126,7 +131,9 @@ hyperparam.J <- function(icp.torus.objects, option = c("risk", "AIC", "BIC")){
       # evaluate risk/AIC/BIC
       criterion <- - 2 * sum.conformity.scores + (k * j - 1) * penalty
       IC <- rbind(IC, data.frame(J = j, criterion = criterion))
+      cat(".")
     }
+    cat("\n")
 
     IC.index <- which.min(IC$criterion)
     Jhat <- IC[IC.index, 1]

@@ -47,8 +47,7 @@
 #'   density is more complicated than before, check the detail of
 #'   the reference article.
 #' @export
-#' @references S. Jung, K. Park, and B. Kim (2021),
-#'   "Clustering on the torus by conformal prediction" to appear in \emph{Annals of Applied Statistics}.
+#' @references Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
 #' @examples
 #' \donttest{
 #' data <- ILE[1:200, 1:2]
@@ -87,7 +86,7 @@ EMsinvMmix <- function(data, J = 4, parammat = EMsinvMmix.init(data, J),
   pimat <- matrix(0,nrow = n, ncol = J)
   #cat(ncol(parammat))
   if(verbose){
-    cat("EMsinvMmix: fitting vM2 with option ",type, ", J =", J, "\n")
+    cat("EMsinvMmix: fitting vM2 mixture, J = ", J, ", option = ", type, ".", sep = "")
     }
 
   cnt <- 1

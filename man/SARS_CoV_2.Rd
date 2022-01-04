@@ -3,29 +3,31 @@
 \docType{data}
 \name{SARS_CoV_2}
 \alias{SARS_CoV_2}
-\title{6VXX: Structure of the SARS-CoV-2 spike glycoprotein(closed state)}
+\title{SARS-CoV-2: chain B of Structure of the SARS-CoV-2 spike glycoprotein(closed state)}
 \format{
 This data.frame contains the following columns:
 \describe{
   \item{\code{phi}}{main chain torsion angle for atoms C,N,CA,C.}
   \item{\code{psi}}{main chain torsion angle for atoms N,CA,C,N.}
-  \item{\code{type}}{type of protein chains}
 }
 }
 \source{
 This data can be downloaded in
   \url{https://www.rcsb.org/structure/6VXX}, or with using R package
-  \code{bio3d}.
+  \code{bio3d}. To see the precise extracting code, visit \url{https://github.com/sungkyujung/ClusTorus/tree/master/data-raw}
 }
 \usage{
 SARS_CoV_2
 }
 \description{
-The torsion angle dataset of the SARS-CoV-2 spike glycopreotein.
+The torsion angle dataset of the chain B of SARS-CoV-2 spike glycopreotein. This data is originally
+from first two main torsion angles of \code{data_6VXX}.
+}
+\details{
+This data is obtained with following codes:
 }
 \references{
-Walls, A.C., et al. (2020), "Structure of the SARS-CoV-2
-  spike glycoprotein (closed state)" Cell 181: 281, DOI:10.2210/pdb6vxx/pdb.
+Walls, A. C., Park, Y. J., Tortorici, M. A., Wall, A., McGuire, A. T., & Veesler, D. (2020). Structure, function, and antigenicity of the SARS-CoV-2 spike glycoprotein. \emph{Cell}, 181(2), 281-292.
   Retrived from \url{https://www.wwpdb.org/pdb?id=pdb_00006vxx}
 }
 \seealso{

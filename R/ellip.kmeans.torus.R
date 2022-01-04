@@ -22,6 +22,9 @@
 #'   method.
 #'   If "hierarchical", the initial parameters are obtained with hierarchical
 #'   clustering method. Default is "hierarchical".
+#' @param d pairwise distance matrix(\code{dist} object) for \code{init = "hierarchical"},
+#'   which used in hierarchical clustering. If \code{init = "hierarchical"} and \code{d = NULL},
+#'   \code{d} will be automatically filled with \code{ang.pdist(data)}.
 #' @param ... Further arguments for argument \code{init}. If \code{init = "kmeans"},
 #'   these are for \code{\link[stats]{kmeans}}. If \code{init = "hierarchical"},
 #'   there are for \code{\link[stats]{hclust}}.
@@ -40,10 +43,11 @@
 #' @export
 #' @seealso
 #'   \code{\link[ClusTorus]{kmeans.torus}}
-#' @references S. Jung, K. Park, and B. Kim (2021),
-#'   "Clustering on the torus by conformal prediction", and
-#'   Jaehyeok Shin, Alessandro Rinaldo and Larry Wasserman (2019),
-#'   "Predictive Clustering"
+#' @references Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+#'
+#'   Mardia, K. V., Kent, J. T., Zhang, Z., Taylor, C. C., & Hamelryck, T. (2012). Mixtures of concentrated multivariate sine distributions with applications to bioinformatics. \emph{Journal of Applied Statistics}, 39(11), 2475-2492.
+#'
+#'   Shin, J., Rinaldo, A., & Wasserman, L. (2019). Predictive clustering. \emph{arXiv preprint arXiv:1903.08125}.
 #' @examples
 #' data <- ILE[1:200, 1:2]
 #'
@@ -54,6 +58,7 @@ ellip.kmeans.torus <- function(data, centers = 10,
                                      "ellipsoids",
                                      "general"),
                             init = c("kmeans", "hierarchical"),
+                            d = NULL,
                             additional.condition = TRUE,
                             THRESHOLD = 1e-10, maxiter = 200,
                             verbose = TRUE, ...){
@@ -63,13 +68,15 @@ ellip.kmeans.torus <- function(data, centers = 10,
 
   # type determines kmeans-fitting method. If "identical", the radii of
   # shperes are the same, and if not, the radii may be different.
-  if (is.null(type)){ type <- "homogeneous-circular" }
-  if (is.null(init)){ init <- "hierarchical" }
 
   type <- match.arg(type)
   init <- match.arg(init)
-  d <- ncol(data)
+  p <- ncol(data)
   n <- nrow(data)
+
+  if (init == "hierarchical" && is.null(d)) {
+    d <- ang.pdist(data)
+  }
 
   sphere.param <- list(mu = NULL, Sigmainv = NULL, c = NULL)
 
@@ -82,7 +89,8 @@ ellip.kmeans.torus <- function(data, centers = 10,
     kmeans.out <- kmeans.torus(data, centers, ...)
   } else {
     J <- ifelse(is.null(ncol(centers)), centers, ncol(centers))
-    kmeans.out <- hcluster.torus(data, J = centers, ...)
+    if (!(class(d) == "dist")) {stop("invalid d: d must be a distance matrix (dist object).")}
+    kmeans.out <- hcluster.torus(data, J = centers, d = d, ...)
   }
 
   centroid <- kmeans.out$centers
@@ -96,7 +104,7 @@ ellip.kmeans.torus <- function(data, centers = 10,
   sphere.param$c <- rep(0, J)
 
   for(j in 1:J){
-    sphere.param$Sigmainv[[j]] <- diag(d)
+    sphere.param$Sigmainv[[j]] <- diag(p)
   }
 
 
@@ -109,10 +117,10 @@ ellip.kmeans.torus <- function(data, centers = 10,
       nj <- kmeans.out$size[j]
       pi_j <- nj / n
       sigma_j <- ifelse(kmeans.out$size[j] <= 1,
-                        1e-6, kmeans.out$withinss[j] / (nj * d))
+                        1e-6, kmeans.out$withinss[j] / (nj * p))
 
-      sphere.param$c[j] <- 2 * log(pi_j) - d * log(sigma_j)
-      sphere.param$Sigmainv[[j]] <- diag(d) / sigma_j
+      sphere.param$c[j] <- 2 * log(pi_j) - p * log(sigma_j)
+      sphere.param$Sigmainv[[j]] <- diag(p) / sigma_j
     }
   }
 
@@ -141,13 +149,13 @@ ellip.kmeans.torus <- function(data, centers = 10,
       if (additional.condition){
         if (det(S) < THRESHOLD || sum(is.na(S)) != 0){
           cnt.singular <- cnt.singular + 1
-          S <- sum(S) / d * diag(d)
+          S <- sum(S) / p * diag(p)
         }
       }
 
       # vanishing the ellipsoid even if the additional condition is given.
       if (det(S) < THRESHOLD || sum(is.na(S)) != 0){
-        S <- 1e-6 * diag(d)
+        S <- 1e-6 * diag(p)
       }
 
       sphere.param$Sigmainv[[j]] <- solve(S)
@@ -189,13 +197,13 @@ ellip.kmeans.torus <- function(data, centers = 10,
       # only implemented when verbose == TRUE
       if (additional.condition){
         if (det(S) < THRESHOLD || sum(is.na(S)) != 0){
-          S <- sum(S) / d * diag(d)
+          S <- sum(S) / p * diag(p)
         }
       }
 
       # vanishing the ellipsoid even if the additional condition is given.
       if (det(S) < THRESHOLD || sum(is.na(S)) != 0){
-        S <- 1e-6 * diag(d)
+        S <- 1e-6 * diag(p)
       }
 
       sphere.param$Sigmainv[[j]] <- solve(S)
@@ -213,7 +221,7 @@ ellip.kmeans.torus <- function(data, centers = 10,
     param.seq <- unlist(sphere.param)
 
     if (verbose){
-      cat("ellip.kmeans.torus: fitting parameters with option ",type, ", J =", J, "\n")
+      cat("ellip.kmeans.torus: fitting appr. mixture, J = ", J,  ", option = ", type, ".", sep = "")
     }
 
     cnt <- 1
@@ -242,10 +250,10 @@ ellip.kmeans.torus <- function(data, centers = 10,
       #                w = x[((d * n) + 1):length(x)] / sum(x[((d * n) + 1):length(x)]))$Mean})
       wmat.mul <- apply(wmat, 2, function(x){
         dat.j <- data[x == 1, ]
-        nj <- length(dat.j) / d
+        nj <- length(dat.j) / p
         if(nj > 0){
           return(wtd.stat.ang(dat.j, w = rep(1, nj) / nj)$Mean)
-        } else { return(rep(0, d)) }
+        } else { return(rep(0, p)) }
       })
 
 
@@ -273,13 +281,13 @@ ellip.kmeans.torus <- function(data, centers = 10,
         # only implemented when additional.condition == TRUE
         if (additional.condition){
           if (det(S) < THRESHOLD || sum(is.na(S)) != 0){
-            S <- sum(S) / d * diag(d)
+            S <- sum(S) / p * diag(p)
           }
         }
 
         # vanishing the ellipsoid even if the additional condition is given.
         if (det(S) < THRESHOLD || sum(is.na(S)) != 0){
-          S <- 1e-6 * diag(d)
+          S <- 1e-6 * diag(p)
         }
 
         sphere.param$Sigmainv[[j]] <- solve(S)
@@ -302,7 +310,7 @@ ellip.kmeans.torus <- function(data, centers = 10,
         break}
     }
     sphere.param$loglkhd <- 0.5 * sum(do.call(pmax,
-                                               as.data.frame(ehat.eval(data, sphere.param)))) - n * d * log(2 * pi) / 2
+                                               as.data.frame(ehat.eval(data, sphere.param)))) - n * p * log(2 * pi) / 2
 
     sphere.param$singular <- c()
     for (j in 1:J){

@@ -8,12 +8,13 @@
 #' @param option A string. One of "elbow", "risk", "AIC", or "BIC", which determines the
 #'   criterion for the model selection. "risk" is based on the negative log-likelihood, "AIC"
 #'   for the Akaike Information Criterion, and "BIC" for the Bayesian Information Criterion.
-#'   "elbow" is based on minimizing the criterion used in Jung et. al.(2021).
+#'   "elbow" is based on minimizing the criterion used in Jung et. al.(2021). Default is
+#'   \code{option = "elbow"} for 2-dimensional cases and \code{option = "risk"} for d(>2)-dimensional cases.
 #' @param alphavec either a scalar or a vector, or even \code{NULL} for the levels.
 #'   Default value is \code{NULL}. If \code{NULL}, then \code{alphavec} is
 #'   automatically generated as a sequence from 0 to \code{alpha.lim}.
 #' @param alpha.lim a positive number lower than 1. Default value is \code{NULL}.
-#'   If \code{NULL}, then \code{alpha.vec} is is 0.5 for option = "elbow", and
+#'   If \code{NULL}, then \code{alpha.vec} is is 0.5 for \code{option = "elbow"}, and
 #'   0.15 for options c("risk", "AIC", or "BIC").
 #' @param eval.point N x N numeric matrix on \eqn{[0, 2\pi)^2}.
 #'   Default input is \code{grid.torus}.
@@ -22,10 +23,11 @@
 #'   selected hyperparameters based on the designated criterion, and
 #'   an \code{icp.torus} object based the selected hyperparameters.
 #' @export
-#' @references S. Jung, K. Park, and B. Kim (2021),
-#'   "Clustering on the torus by conformal prediction",
-#'   Akaike (1974), "A new look at the statistical model identification",
-#'   Schwarz, Gideon E. (1978), "Estimating the dimension of a model"
+#' @references Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+#'
+#'   Akaike, H. (1974). A new look at the statistical model identification. \emph{IEEE transactions on automatic control}, 19(6), 716-723.
+#'
+#'   Schwarz, G. (1978). Estimating the dimension of a model. \emph{The annals of statistics}, 461-464.
 #' @examples
 #' \donttest{
 #' data <- toydata2[, 1:2]
@@ -57,9 +59,9 @@ hyperparam.torus <- function(icp.torus.objects,
       stop("invalid input: the elements of icp.torus.objects must be icp.torus objects.")
     }
   }
-  method <- icp.torus.objects[[1]]$method
-  fitmethod <- ifelse(method != "kde",  icp.torus.objects[[1]]$fittingmethod, " ")
-  data <- as.matrix(icp.torus.objects[[1]]$model)
+  model <- icp.torus.objects[[1]]$model
+  fitmethod <- ifelse(model != "kde",  icp.torus.objects[[1]]$fittingmethod, " ")
+  data <- as.matrix(icp.torus.objects[[1]]$data)
   d <- icp.torus.objects[[1]]$d
   n2 <- icp.torus.objects[[1]]$n2
   # if d <= 2, default is elbow based criterion. If d > 2, default is risk.
@@ -67,19 +69,19 @@ hyperparam.torus <- function(icp.torus.objects,
     option <- ifelse(d <= 2, "elbow", "risk")
   }
 
-  if (option != "elbow" && method == "kde"){
+  if (option != "elbow" && model == "kde"){
     warning("Parameters for kde should be chosen by option elbow. Switching to option elbow...")
     option = "elbow"
   }
-  if (method != "kmeans" && d > 2) {
-    stop(paste("The method", method," is not supported for dimension d >= 3."))
+  if (model != "kmeans" && d > 2) {
+    stop(paste("The model", model," is not supported for dimension d >= 3."))
   }
 
   if (is.null(alpha.lim)) { alpha.lim <- ifelse(option=="elbow",0.5,0.15)}
   if (is.null(alphavec) && alpha.lim > 1) {stop("alpha.lim must be less than 1.")}
 
   output <- list()
-  output$method <- c(method, fitmethod)
+  output$model <- c(model, fitmethod)
   output$option <- option
 
 
@@ -88,14 +90,15 @@ hyperparam.torus <- function(icp.torus.objects,
 
   # criterion based on elbow -----------------------------------
   if (option == "elbow"){
-    if (d > 3) {warning("Option `elbow` takes long for high dimensional case (d >= 3).", immediate. = TRUE)}
+
+        if (d > 3) {warning("Option `elbow` takes long for high dimensional case (d >= 3).", immediate. = TRUE)}
 
     # generating grid points if eval.point == NULL : sparse when d is large.
     grid.size <- ifelse(d == 2, 100, floor(10^(6/d)))
     if (is.null(eval.point)) { eval.point <- grid.torus(d = d, grid.size = grid.size)}
 
     # 1. kmeans -----------------------------------------------------
-    if (method == "kmeans"){
+    if (model == "kmeans"){
       N <- length(alphavec)
       Mvec <- vector("numeric", length = N)
       out <- data.frame()
@@ -105,8 +108,9 @@ hyperparam.torus <- function(icp.torus.objects,
         Mvec <- colSums(inclusion.test$Chat_kmeans)/nrow(eval.point)
 
         out <- rbind(out, data.frame(id = j,J = length(icp.torus.objects[[j]]$ellipsefit$c), alpha = alphavec, mu = Mvec, criterion = alphavec +  Mvec))
+        cat(".")
       }
-
+      cat("\n")
       out.index <- which.min(out$criterion)
       output$results <- out[,2:5]
       output$icp.torus <- icp.torus.objects[[out[out.index, 1]]]
@@ -117,7 +121,7 @@ hyperparam.torus <- function(icp.torus.objects,
       return(structure(output, class = "hyperparam.torus"))
 
       # 2. mixture ----------------------------------------------------------------
-    } else if (method == "mixture") {
+    } else if (model == "mixture") {
       N <- length(alphavec)
       Mvec <- vector("numeric", length = N)
       out <- data.frame()
@@ -125,9 +129,10 @@ hyperparam.torus <- function(icp.torus.objects,
       for (j in 1:n.icp.torus){
         inclusion.test <- icp.torus.eval(icp.torus.objects[[j]], level = alphavec, eval.point = eval.point)
         Mvec <- colSums(inclusion.test$Chat_mix)/nrow(eval.point)
-
         out <- rbind(out, data.frame(id = j, J = length(icp.torus.objects[[j]]$ellipsefit$c), alpha = alphavec, mu = Mvec, criterion = alphavec +  Mvec))
+        cat(".")
       }
+      cat("\n")
 
       out.index <- which.min(out$criterion)
       output$results <- out[,2:5]
@@ -148,9 +153,10 @@ hyperparam.torus <- function(icp.torus.objects,
       for (k in 1:n.icp.torus){
         inclusion.test <- icp.torus.eval(icp.torus.objects[[k]], level = alphavec, eval.point = eval.point)
         Mvec <- colSums(inclusion.test$Chat_kde)/nrow(eval.point)
-
         out <- rbind(out, data.frame(id = k, k = icp.torus.objects[[k]]$concentration, alpha = alphavec, mu = Mvec, criterion = alphavec + Mvec))
+        cat(".")
       }
+      cat("\n")
 
       out.index <- which.min(out$criterion)
       output$results <- out[,2:5]

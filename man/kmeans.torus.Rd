@@ -20,7 +20,8 @@ chosen as the initial centers.}
 
 \item{object}{\code{kmeans.torus} object}
 
-\item{newdata}{\code{data} to be input}
+\item{newdata}{n x d matrix of toroidal data on \eqn{[0, 2\pi)^d}.
+Dimension d must be the same as data used for \code{kmeans.torus} object.}
 }
 \value{
 returns a \code{kmeans} object, which contains
@@ -57,8 +58,9 @@ kmeans.torus(data, centers = 2,
              iter.max = 100, nstart = 1)
 }
 \references{
-'S. Jung, K. Park, and B. Kim (2021),
-  "Clustering on the torus by conformal prediction"
+Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+
+  Gao, Y., Wang, S., Deng, M., & Xu, J. (2018). RaptorX-Angle: real-value prediction of protein backbone dihedral angles through a hybrid method of clustering and deep learning. \emph{BMC bioinformatics}, 19(4), 73-84.
 }
 \seealso{
 \code{\link[stats]{kmeans}}, \code{\link[ClusTorus]{ang.minus}}, \code{\link[ClusTorus]{ang.dist}}

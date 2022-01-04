@@ -11,7 +11,7 @@ Description: Provides various tools of for clustering multivariate angular
   estimate, multivariate von Mises mixtures, and naive k-means clusters. 
   Moreover, the package provides some basic data handling tools for 
   angular data.
-Version: 0.2.1
+Version: 0.2.2
 License: GPL-3
 Authors@R: 
   c(person("Sungkyu", "Jung", email = "sungkyu@snu.ac.kr", role = c("aut","cph")),
@@ -28,11 +28,11 @@ Imports: BAMBI, igraph, purrr, ggplot2, rlang, stats, utils, cowplot
 Suggests: knitr, rmarkdown, tidyverse
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2021-12-17 00:48:39 UTC; hongseung-gi
+Packaged: 2022-01-04 01:58:20 UTC; hongseung-gi
 Author: Sungkyu Jung [aut, cph],
   Seungki Hong [aut, cre],
   Kiho Park [ctb],
   Byungwon Kim [ctb]
 Maintainer: Seungki Hong <skgaboja@snu.ac.kr>
 Repository: CRAN
-Date/Publication: 2021-12-17 09:12:09 UTC
+Date/Publication: 2022-01-04 10:10:05 UTC

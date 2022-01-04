@@ -14,7 +14,8 @@ icp.torus(
   mixturefitmethod = c("axis-aligned", "circular", "general"),
   kmeansfitmethod = c("general", "homogeneous-circular", "heterogeneous-circular",
     "ellipsoids"),
-  init = c("kmeans", "hierarchical"),
+  init = c("hierarchical", "kmeans"),
+  d = NULL,
   additional.condition = TRUE,
   J = 4,
   concentration = 25,
@@ -56,11 +57,11 @@ Mises mixture, but the parameter estimation is implemented with the
 elliptical k-means algorithm illustrated in Appendix. It supports the
 log-max-mixture based conformity score only. If the
 dimension of data space is greater than 2, only "kmeans" is supported.
-Default is \code{method = "kmeans"}.}
+Default is \code{model = "kmeans"}.}
 
 \item{mixturefitmethod}{A string. One of "circular", "axis-aligned", and
 "general" which determines the constraint of the EM fitting. Default is
-"axis-aligned". This argument only works for \code{method = "mixture"}.}
+"axis-aligned". This argument only works for \code{model = "mixture"}.}
 
 \item{kmeansfitmethod}{A string. One of "general", ellipsoids",
 "heterogeneous-circular" or "homogeneous-circular". If "general", the
@@ -68,23 +69,27 @@ elliptical k-means algorithm with no constraint is used. If "ellipsoids",
 only the one iteration of the algorithm is used. If"heterogeneous-circular",
 the same as above, but with the constraint that ellipsoids must be spheres.
 If "homogeneous-circular", the same as above but the radii of the spheres are
-identical. Default is "general". This argument only works for method = "kmeans".}
+identical. Default is "general". This argument only works for \code{model = "kmeans"}.}
 
-\item{init}{determine the initial parameter of "kmeans" method,
-for option "general". Must be "kmeans" or "hierarchical".
-If "kmeans", the initial parameters are obtained with extrinsic kmeans
-method.
-If "hierarchical", the initial parameters are obtained with hierarchical
-clustering method.
-Default is "kmeans".}
+\item{init}{Methods for choosing initial values of "kmeans" fitting.
+ Must be "hierarchical" or "kmeans". If "hierarchical", the initial
+parameters are obtained with hierarchical clustering method.
+If "kmeans", the initial parameters are obtained with extrinsic k-means method.
+ Additional arguments for k-means clustering and hierarchical clustering can be designated
+ via argument \code{...}. If no options are designated, \code{nstart=1} for \code{init="kmeans"}
+ and \code{method="complete"} for \code{init="hierarchical"} are used. Default is "hierarchical".}
+
+\item{d}{pairwise distance matrix(\code{dist} object) for \code{init = "hierarchical"},
+which used in hierarchical clustering. If \code{init = "hierarchical"} and \code{d = NULL},
+\code{d} will be automatically filled with \code{ang.pdist(data)}.}
 
 \item{additional.condition}{boolean index.
 If \code{TRUE}, a singular matrix will be altered to the scaled identity.}
 
-\item{J}{the number of components for \code{method = c("mixture", "kmeans")}.
+\item{J}{A scalar or numeric vector for the number(s) of components for \code{model = c("mixture", "kmeans")}.
 Default is \code{J = 4}.}
 
-\item{concentration}{the concentration parameter for \code{method = "kde"}.
+\item{concentration}{A scalar or numeric vector for the concentration parameter(s) for \code{model = "kde"}.
 Default is \code{concentration = 25}.}
 
 \item{kmax}{the maximal number of kappa. If estimated kappa is
@@ -104,19 +109,21 @@ how many loops are done. Moreover, if \code{additional.condition} is
 
 \item{object}{\code{icp.torus} object}
 
-\item{newdata}{\code{data}}
+\item{newdata}{n x d matrix of toroidal data on \eqn{[0, 2\pi)^d}.
+Dimension d must be the same as data used for \code{icp.torus} object.}
 
 \item{x}{\code{icp.torus} object}
 
-\item{level}{either a scalar or a vector, or even \code{NULL}. Default value
-is 0.1.}
+\item{level}{either a numeric scalar or a vector in \eqn{[0,1]}. Default value is 0.1.}
 
-\item{ellipse}{A boolean index which determines whether plotting ellipse-intersections. Default is \code{TRUE}.}
+\item{ellipse}{A boolean index which determines whether plotting ellipses from
+mixture models. Default is \code{TRUE}. (This option is used only when the
+\code{icp.torus} object \code{x} is fitted by model \code{kmeans} or \code{mixture}.)}
 
 \item{out}{An option for returning the ggplot object. Default is \code{FALSE}.}
 
 \item{type}{A string. One of "mix", "max" or "e". This argument is only available if \code{icp.torus}
-object is fitted with method = "mixture". Default is \code{NULL}. If \code{type != NULL}, argument
+object is fitted with \code{model = "mixture"}. Default is \code{NULL}. If \code{type != NULL}, argument
 \code{ellipse} automatically becomes \code{FALSE}. If "mix", it plots based on von Mises mixture.
 If "max", it plots based on von Mises max-mixture. If "e", it plots based on ellipse-approximation.}
 }
@@ -142,6 +149,11 @@ icp.torus <- icp.torus(data, model = "kmeans",
 }
 }
 \references{
-S. Jung, K. Park, and B. Kim (2021),
-  "Clustering on the torus by conformal prediction"
+Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+
+  Mardia, K. V., Kent, J. T., Zhang, Z., Taylor, C. C., & Hamelryck, T. (2012). Mixtures of concentrated multivariate sine distributions with applications to bioinformatics. \emph{Journal of Applied Statistics}, 39(11), 2475-2492.
+
+  Di Marzio, M., Panzera, A., & Taylor, C. C. (2011). Kernel density estimation on the torus. \emph{Journal of Statistical Planning and Inference}, 141(6), 2156-2173.
+
+  Shin, J., Rinaldo, A., & Wasserman, L. (2019). Predictive clustering. \emph{arXiv preprint arXiv:1903.08125}.
 }

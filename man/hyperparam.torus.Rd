@@ -22,14 +22,15 @@ hyperparam.torus(
 \item{option}{A string. One of "elbow", "risk", "AIC", or "BIC", which determines the
 criterion for the model selection. "risk" is based on the negative log-likelihood, "AIC"
 for the Akaike Information Criterion, and "BIC" for the Bayesian Information Criterion.
-"elbow" is based on minimizing the criterion used in Jung et. al.(2021).}
+"elbow" is based on minimizing the criterion used in Jung et. al.(2021). Default is
+\code{option = "elbow"} for 2-dimensional cases and \code{option = "risk"} for d(>2)-dimensional cases.}
 
 \item{alphavec}{either a scalar or a vector, or even \code{NULL} for the levels.
 Default value is \code{NULL}. If \code{NULL}, then \code{alphavec} is
 automatically generated as a sequence from 0 to \code{alpha.lim}.}
 
 \item{alpha.lim}{a positive number lower than 1. Default value is \code{NULL}.
-If \code{NULL}, then \code{alpha.vec} is is 0.5 for option = "elbow", and
+If \code{NULL}, then \code{alpha.vec} is is 0.5 for \code{option = "elbow"}, and
 0.15 for options c("risk", "AIC", or "BIC").}
 
 \item{eval.point}{N x N numeric matrix on \eqn{[0, 2\pi)^2}.
@@ -70,8 +71,9 @@ hyperparam.torus(icp.torus.objects, option = "risk")
 }
 }
 \references{
-S. Jung, K. Park, and B. Kim (2021),
-  "Clustering on the torus by conformal prediction",
-  Akaike (1974), "A new look at the statistical model identification",
-  Schwarz, Gideon E. (1978), "Estimating the dimension of a model"
+Jung, S., Park, K., & Kim, B. (2021). Clustering on the torus by conformal prediction. \emph{The Annals of Applied Statistics}, 15(4), 1583-1603.
+
+  Akaike, H. (1974). A new look at the statistical model identification. \emph{IEEE transactions on automatic control}, 19(6), 716-723.
+
+  Schwarz, G. (1978). Estimating the dimension of a model. \emph{The annals of statistics}, 461-464.
 }
